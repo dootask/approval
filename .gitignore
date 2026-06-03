@@ -1,5 +1,7 @@
 go-workflow.exe
 go-workflow
+/main
+/flow/
 STAR.fznews.com.cn.crt
 STAR.fznews.com.cn.key
 server.crt
