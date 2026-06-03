@@ -132,6 +132,50 @@ func StartProcessInstance(writer http.ResponseWriter, request *http.Request) {
 	util.ResponseData(writer, datas)
 }
 
+// DelProcInst 删除一条审批（流程实例）
+// 仅终态可删，权限校验由 userID / isAdmin 决定（真实鉴权在主程序完成）
+func DelProcInst(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != "POST" {
+		util.ResponseErr(writer, "只支持Post方法！！Only support Post ")
+		return
+	}
+	var rec = struct {
+		ProcInstID int    `json:"procInstID"`
+		UserID     string `json:"userID"`
+		IsAdmin    bool   `json:"isAdmin"`
+	}{}
+	if err := util.Body2Struct(request, &rec); err != nil {
+		util.ResponseErr(writer, err)
+		return
+	}
+	if rec.ProcInstID == 0 {
+		util.ResponseErr(writer, "字段 procInstID 不能为空,必须为数字！")
+		return
+	}
+	if len(rec.UserID) == 0 {
+		util.ResponseErr(writer, "字段 userID 不能为空！")
+		return
+	}
+	if err := service.DeleteProcInst(rec.ProcInstID, rec.UserID, rec.IsAdmin); err != nil {
+		util.ResponseErr(writer, err)
+		return
+	}
+	util.ResponseOk(writer)
+}
+
+// ClearAllData 清空所有审批数据（供卸载插件时调用）
+func ClearAllData(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != "POST" {
+		util.ResponseErr(writer, "只支持Post方法！！Only support Post ")
+		return
+	}
+	if err := service.ClearAllData(); err != nil {
+		util.ResponseErr(writer, err)
+		return
+	}
+	util.ResponseOk(writer)
+}
+
 // FindMyProcInstPageAsJSON 查询到我审批的流程实例
 func FindMyProcInstPageAsJSON(writer http.ResponseWriter, request *http.Request) {
 	if model.RedisOpen {

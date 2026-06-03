@@ -47,10 +47,14 @@ func setMux() {
 	Mux.HandleFunc("/api/v1/workflow/process/findProcNotify", intercept(controller.FindProcNotify))               // 查询抄送我的流程（审批中）
 	Mux.HandleFunc("/api/v1/workflow/process/addGlobalComment", intercept(controller.AddGlobalComment))           // 新增全局评论
 	Mux.HandleFunc("/api/v1/workflow/process/getUserApprovalStatus", intercept(controller.GetUserApprovalStatus)) // 获取用户审批当前状态
+	Mux.HandleFunc("/api/v1/workflow/process/delById", intercept(controller.DelProcInst))                         // 删除一条审批（流程实例）
 	// Mux.HandleFunc("/workflow/process/moveToHistory", controller.MoveFinishedProcInstToHistory)
 	// -----------------------任务--------------------------
 	Mux.HandleFunc("/api/v1/workflow/task/complete", intercept(controller.CompleteTask)) //审批任务
 	Mux.HandleFunc("/api/v1/workflow/task/withdraw", intercept(controller.WithDrawTask)) //撤回任务
+
+	// ******************************** 系统（供插件卸载等内部调用）***********************************
+	Mux.HandleFunc("/api/v1/workflow/system/clear", intercept(controller.ClearAllData)) // 清空所有审批数据
 
 	// ----------------------- 关系表 -------------------------
 	Mux.HandleFunc("/api/v1/workflow/identitylink/findParticipant", intercept(controller.FindParticipantByProcInstID))       //查询流程实例的参与者（审批中）

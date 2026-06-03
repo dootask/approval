@@ -375,6 +375,31 @@ func DelProcInstByIDTx(id int, tx *gorm.DB) error {
 	return tx.Where("id=?", id).Delete(&ProcInst{}).Error
 }
 
+// FindProcInstForDelete 查询流程实例并区分其所在的表
+// 优先查运行表(proc_inst)，未命中再查历史表(proc_inst_history)
+// 返回流程实例、是否位于历史表、错误
+func FindProcInstForDelete(id int) (*ProcInst, bool, error) {
+	var inst = &ProcInst{}
+	if err := db.Where("id=?", id).First(inst).Error; err == nil {
+		return inst, false, nil
+	}
+	var his = &ProcInstHistory{}
+	if err := db.Where("id=?", id).First(his).Error; err != nil {
+		return nil, false, err
+	}
+	return &his.ProcInst, true, nil
+}
+
+// DelProcInstHistoryCascadeTx 删除历史流程实例（事务）
+// proc_inst_history 的外键仅级联 execution_history / identitylink_history，
+// task_history 未配外键，需手动按 proc_inst_id 清理。
+func DelProcInstHistoryCascadeTx(id int, tx *gorm.DB) error {
+	if err := tx.Where("proc_inst_id=?", id).Delete(&TaskHistory{}).Error; err != nil {
+		return err
+	}
+	return tx.Where("id=?", id).Delete(&ProcInstHistory{}).Error
+}
+
 // UpdateTx 更新
 func (p *ProcInst) UpdateTx(tx *gorm.DB) error {
 	return tx.Model(&ProcInst{}).Updates(p).Error

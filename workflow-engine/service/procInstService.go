@@ -514,6 +514,40 @@ func DelProcInstByIDTx(procInstID int, tx *gorm.DB) error {
 	return model.DelProcInstByIDTx(procInstID, tx)
 }
 
+// DeleteProcInst 删除一条审批（流程实例）
+// 仅允许删除已结束的审批（state: 2通过/3拒绝/4撤回），且仅发起人或管理员可删。
+func DeleteProcInst(procInstID int, userID string, isAdmin bool) error {
+	inst, _, err := model.FindProcInstForDelete(procInstID)
+	if err != nil {
+		return errors.New("审批不存在或已被删除")
+	}
+	// 仅终态可删，禁止删除待审批(0)/审批中(1)
+	if inst.State != 2 && inst.State != 3 && inst.State != 4 {
+		return errors.New("仅可删除已结束的审批（已通过、已拒绝或已撤回）")
+	}
+	// 权限：管理员可删任意，普通用户仅可删自己发起的
+	if !isAdmin && inst.StartUserID != userID {
+		return errors.New("无权限删除该审批")
+	}
+	// 同一事务内对运行表与历史表都执行删除（均按 id 幂等）：
+	// 避免在校验后、删除前被归档 cron 从运行表移动到历史表而导致删除落空。
+	tx := model.GetTx()
+	if err = model.DelProcInstByIDTx(procInstID, tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err = model.DelProcInstHistoryCascadeTx(procInstID, tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
+}
+
+// ClearAllData 清空所有审批业务数据（用于卸载插件）
+func ClearAllData() error {
+	return model.ClearAllBusinessData()
+}
+
 // copyIdentitylinkToHistoryByProcInstID 将identitylink移至历史纪录
 func copyIdentitylinkToHistoryByProcInstID(procInstID int, tx *gorm.DB) error {
 	return model.CopyIdentitylinkToHistoryByProcInstID(procInstID, tx)
