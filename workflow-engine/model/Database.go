@@ -165,10 +165,10 @@ func GetTx() *gorm.DB {
 	return db.Begin()
 }
 
-// ClearAllBusinessData 清空所有审批业务数据（用于卸载插件时清理）
-// 按外键依赖顺序（子表先于父表）逐表 DELETE，保留表结构。
-// 不使用 SET FOREIGN_KEY_CHECKS：它是 session 级开关，在连接池下
-// 关闭与 TRUNCATE/DELETE 可能落到不同连接上而失效，导致父表清理失败。
+// ClearAllBusinessData 删除所有审批业务表（用于卸载插件时清理）
+// 直接 DROP TABLE 而非清空数据：重新安装时表不存在 → 重建被判定为"首次建表"
+// → 可重新写入演示数据（演示数据仅在首次建表时写入）。
+// 按外键依赖顺序（子表先于父表）DROP，父表被 DROP 时已无子表引用，无需关外键检查。
 func ClearAllBusinessData() error {
 	// 顺序：先删引用 proc_inst / proc_inst_history 的子表，再删父表
 	tables := []string{
@@ -177,7 +177,7 @@ func ClearAllBusinessData() error {
 		"procdef", "procdef_history",
 	}
 	for _, t := range tables {
-		if err := db.Exec("DELETE FROM " + conf.DbPrefix + t).Error; err != nil {
+		if err := db.Exec("DROP TABLE IF EXISTS " + conf.DbPrefix + t).Error; err != nil {
 			return err
 		}
 	}

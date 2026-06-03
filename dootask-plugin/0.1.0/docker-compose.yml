@@ -10,5 +10,5 @@ services:
       MYSQL_USERNAME: "${DB_USERNAME}"
       MYSQL_PASSWORD: "${DB_PASSWORD}"
       MYSQL_Prefix: "${DB_PREFIX}approve_"
-      DEMO_DATA: "${DEMO_DATA:-false}"
+      DEMO_DATA: "${DEMO_DATA}"
       KEY: ${APP_KEY}

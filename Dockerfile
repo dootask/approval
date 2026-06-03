@@ -35,6 +35,7 @@ WORKDIR /var/doo/
 
 COPY --from=backend /src/main .
 COPY config.json .
+COPY workflow-engine/model/seeders/ /var/doo/workflow-engine/model/seeders/
 COPY --from=frontend /app/workflow-vue3/dist/ /var/doo/dist
 COPY docker/nginx/default.conf /etc/nginx/conf.d/
 
