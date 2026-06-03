@@ -60,10 +60,11 @@ jobs:
 
       - name: Publish to DooTask App Store
         id: publish
-        uses: dootask/appstore-action@v2
+        uses: dootask/appstore-action@v3
         with:
           username: ${{ secrets.DOOTASK_USERNAME }}
           password: ${{ secrets.DOOTASK_PASSWORD }}
           appid: 'approve'
           package_file: './dootask-plugin.tar.gz'
           draft: false
+          is_system_app: true
